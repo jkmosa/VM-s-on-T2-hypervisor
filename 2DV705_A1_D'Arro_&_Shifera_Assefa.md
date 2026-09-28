@@ -20,7 +20,6 @@
 ## Part A — the machine 
 
 
-
 ### Tasks A1 (Install a type 2 hypervisor)
 
 The chosen host machine under the hybervisor is Windows 11 version 25H2 and Oracle virtualbox as a type 2 hypervisor. 
@@ -65,7 +64,7 @@ The setup process involves configuring virtual hardware resources to mimic a phy
 ### Tasks A3 (inspect the four resources)
 
 
-> 1. lscpu | grep -i hypervisor
+> 1. command lscpu | grep -i hypervisor
 
 - What the guest sees:
 
@@ -77,7 +76,7 @@ The guest is interacting with a virtualized CPU topology. The hypervisor interce
 
 ![cpu](/images/hypervisor.png)
 
-> 2. free -h
+> 2. command free -h
 
 - What the guest sees:
 
@@ -95,7 +94,7 @@ In reality, the host may use techniques like
 
 ![RAM](/images/meme.png)
 
-> 3. lsblk
+> 3. command lsblk
 
 - What the guest sees:
 
@@ -109,7 +108,7 @@ The sr0 drive is an ISO image file (such as a Linux installation disc or Virtual
 
 ![storage](/images/listblock.png)
 
-> 4. ip addr
+> 4. command ip addr
 
 - What the guest sees:
 
@@ -121,7 +120,7 @@ The guest is using a Virtual Network Interface Card (vNIC) software-emulated by 
 
 ![nat network](/images/nat_ip.png)
 
-> 5. systemd-detect-virt
+> 5. command systemd-detect-virt
 
 - What the guest sees:
 
@@ -135,26 +134,105 @@ Detection Mechanism: The systemd-detect-virt command looks inside files like /sy
 
 ![virtualized environment](/images/virt.png)
 
-## Part B — allocation 
+<br>
 
+## Part B — allocation 
 
 
 ### Tasks B1 (Measure the vCPU count)
 
+**Experimental Methodology**
 
+The objective of this task was to evaluate how virtual machine processing performance scales when modifying the allocated virtual CPU (vCPU) count.
+
+1. System Provisioning: The virtual machine was shut down sequentially to modify the vCPU configuration in the hypervisor settings to 1 vCPU, 2 vCPUs, and 4 vCPUs.
+
+2. Execution: For each hardware configuration, the matrixprod CPU stress method was executed using stress-ng. This specific method stresses the CPU by performing intensive matrix multiplications, isolating raw computational throughput.
+
+3. Consistency Constraints: Each configuration was tested 3 separate times for a duration of 30 seconds to minimize background noise and ensure statistical reliability.
+
+**Collected Data and Metrics**
+
+The table below outlines the computational throughput measured in bogo-ops/s (bogus operations per second) across all nine iterations.
+
+| vCPU Configuration | Run 1 (bogo-ops/s) | Run 2 (bogo-ops/s) | Run 3 (bogo-ops/s) | Average Throughput (bogo-ops/s) |
+|:---                |        :---:       |        :---:       |        :---:       |                             ---:|
+| 1 vCPU	           | 2,171.02	          | 2,213.90	         | 2,134.29	          | 2,173.07                        |
+| 2 vCPUs	           | 2,255.63	          | 2,282.07	         | 2,352.98	          | 2,296.89                        |
+| 4 vCPUs	           | 2,307.03	          | 2,056.16	         | 2,228.32	          | 2,197.17                        |
+
+The spike of the cpu usage in the host machine:
+
+![task manager cpu usage spike](/images/4cpu.png)
 
 ### Tasks B2 (Produce contention)
 
+**Experimental Setup & Methodology**
+
+The objective of this task was to analyze the performance impact of CPU resource contention by simulating two virtual machines competing for the same underlying physical hardware.
+
+1. System Provisioning: Two identical virtual machines (Guest 1 and Guest 2) were configured, each allocated 2 vCPUs and 4 GB RAM.
+
+2. Baseline Test (Isolated): Guest 1 was booted alone while Guest 2 was entirely powered off. The benchmark tool stress-ng was executed to measure peak isolated performance.
+
+3. Contention Test (Concurrent): Both Guest 1 and Guest 2 were powered on simultaneously. The benchmark command was initiated on both machines at the exact same time to force resource competition.
+
+**Collected Data & Benchmark Metrics**
+
+The throughput metrics below reflect the computational output measured in bogo-ops/s (bogus operations per second) for both scenarios.
+
+| Test Scenario           |	Guest 1 Throughput (bogo-ops/s)	| Guest 2 Throughput (bogo-ops/s) |	Total Aggregate Throughput |
+|:---                     |                :---:            |              :---:              |                        ---:|
+| Test 1: Guest 1 Alone	  |          2,318.80	              |          Powered Off	          |           2,318.80         |
+| Test 2: Concurrent Load |	         2,150.54	              |          1,928.52	              |           4,079.06         |
+
+The spike of the cpu usage in the host machine:
+ 
+![task manager cpu usage spike](/images/2cpu_2nodes.png)
+
+**Observations**
+
+- Individual Performance Drop: When running concurrently, Guest 1’s performance dropped from 2,318.80 to 2,150.54 bogo-ops/s. This represents a 7.25% loss in processing efficiency for the individual VM due to resource contention.
+
+- Aggregate Gain: While individual performance degraded, the total workload processed by the host CPU hardware jumped from 2,318.80 to 4,079.06 bogo-ops/s (43.15% higher system utilization).
 
 
 ### Tasks B3 (Your consolidation ratio)
 
+![ubuntu 24.04.5 LTS](images/two_machine.png)
 
+**Consolidation Ratios & Resource Allocation**
+
+This analysis evaluates the consolidation metrics for a multi-VM deployment on the host hardware. The deployment scenario assumes two active virtual machines, each provisioned with 2 vCPUs, 4 GB RAM, and a 50 GB virtual hard drive.
+
+**Host vs. Promised Allocation Metrics**
+
+| Resource Type  | Host Hardware (Physical) | Total Promised (All VMs) | Consolidation Ratio	         | Overcommitted  |
+|:---            |          :---:           |           :---:          |             :---:             |            ---:|
+| CPU (Cores)	   | 24 Cores / 32 Threads	  | 4 vCPUs	                 | 6 : 1 (vCPU to Core)	         |    No          |
+| Memory (RAM)	 | 16 GB RAM	              | 4 GB RAM                 | 4 : 1 (Promised to Physical)  |    No          |
+| Storage (Disk) | 1 TB NVMe SSD	          | 40 GB Virtual Disk       | 25 : 1 (Allocated to Total)   |    No          |
+
+
+<br>
 
 ## Reflection 
 
-What virtualization buys and what it costs — half 
+**Analytical Evaluation & Deployment Arguments**
 
+Benefits of Resource Overcommitment (What it Buys)
+
+- Capital Efficiency: Maximizes hardware utilization by capitalizing on the fact that idle VMs do not fully exhaust their allocated footprints simultaneously.
+
+- Density & Scalability: Allows organizations to host more workloads on fewer physical servers, directly lowering power, cooling, and hardware procurement costs.
+
+Risks of Resource Overcommitment (What it Risks)
+
+- The "Noisy Neighbor" Effect: If multiple VMs spike in resource utilization simultaneously (as simulated in Task B2), the hypervisor struggles to allocate physical cycles, degrading overall performance.
+
+- System Instability: Extreme memory overcommitment can force the host to swap to disk, drastically slowing down operations or triggering the Out-Of-Memory (OOM) killer, which terminates active processes.
+
+<br>
 
 ## Appendix
 
@@ -168,3 +246,25 @@ sudo cat /sys/class/dmi/id/product_name
 
 ```
 
+Part B task 1:
+
+```bash
+stress-ng --cpu N --cpu-method matrixprod --timeout 30s --metrics-brief
+```
+Use code with caution.
+(Where N represents the respective vCPU allocation: 1, 2, or 4)
+
+![stress bogo-ops/s](images/stress_cpu1.png)
+
+![stress bogo-ops/s](images/stress_cpu2.png)
+
+![stress bogo-ops/s](images/stress_cpu4.png)
+
+Part B task 2:
+
+```bash
+stress-ng --cpu 2 --cpu-method matrixprod --timeout 30s --metrics-brief
+```
+![stress bogo-ops/s](images/1node.png)
+
+![stress bogo-ops/s](images/2node.png)
