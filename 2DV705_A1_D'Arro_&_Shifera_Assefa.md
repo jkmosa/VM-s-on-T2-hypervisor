@@ -1,6 +1,5 @@
 # Building VM's with type 2 hypervisor  
 
-
 ## Front page 
 
 - Author
@@ -16,6 +15,22 @@
 - Type 2 hypervisor
   - virtualbox (7.2.2r170484) (where 170484 is the specific build number)
 
+## Table of content 
+
+<!-- TOC -->
+
+- [Part A — the machine](#part-a--the-machine)
+  - [Tasks A1 (Install a type 2 hypervisor)](#tasks-a1-install-a-type-2-hypervisor)
+  - [Tasks A2 ( Create the machine)](#tasks-a2--create-the-machine)
+  - [Tasks A3 (inspect the four resources)](#tasks-a3-inspect-the-four-resources)
+- [Part B — allocation](#part-b--allocation)
+  - [Tasks B1 (Measure the vCPU count)](#tasks-b1-measure-the-vcpu-count)
+  - [Tasks B2 (Produce contention)](#tasks-b2-produce-contention)
+  - [Tasks B3 (Your consolidation ratio)](#tasks-b3-your-consolidation-ratio)
+- [Reflection](#reflection)
+- [Appendix](#appendix)
+
+<!-- /TOC -->
 
 ## Part A — the machine 
 
@@ -268,3 +283,4 @@ stress-ng --cpu 2 --cpu-method matrixprod --timeout 30s --metrics-brief
 ![stress bogo-ops/s](images/1node.png)
 
 ![stress bogo-ops/s](images/2node.png)
+
