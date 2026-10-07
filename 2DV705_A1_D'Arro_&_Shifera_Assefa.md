@@ -6,16 +6,10 @@
   - Roberto D'Arro (rd222kd@student.lnu.se)
   - Mussie Shifera Assefa (ms228qx@student.lnu.se)
 
+
 - Submission date 
   - 09/28/2026
 
-- Host OS
-  - window 11 version 25H2
-
-- Type 2 hypervisor
-  - virtualbox (7.2.2r170484) (where 170484 is the specific build number)
-
-## Table of content 
 
 <!-- TOC -->
 
@@ -32,42 +26,102 @@
 
 <!-- /TOC -->
 
-## Part A — the machine 
 
+## Part A — the machine 
 
 ### Tasks A1 (Install a type 2 hypervisor)
 
-The chosen host machine under the hybervisor is Windows 11 version 25H2 and Oracle virtualbox as a type 2 hypervisor. 
+**Physical (host machine)**
 
-Oracle VM VirtualBox is a free, open-source virtualization software that runs on Windows 11 to let you create and run other operating systems—like Linux, macOS, or older Windows versions—as virtual machines right on your desktop.
+The system has strong physical resources, including a 24-core CPU with 32 logical processors, approximately 16 GB of RAM, and a 954 GB NVMe SSD. At the time of measurement, CPU utilization was low at 2%, while memory usage was relatively high at 15.2 GB. The Ethernet interface was not connected but showed no active network traffic with specifically link local ip address of 169.254.32.42.
 
-![virtualbox](images/virtualbox.png)
+The chosen host machine under the type 2 hybervisor is Windows 11. 
 
-Alongside installing the hypervisor recommended to install the extension package this is usefull i.e NIC (network card interface) ability fot the guest machine.   
+- Host OS
+  * window 11 version 25H2
+
+![Physical CPU](/images/P_cpu.png)
+
+Figure A.1.1: CPU 24 cores and 32 logical processer.
+
+<br>
+
+![Physical RAM](/images/P_ram.png)
+
+Figure A.1.2: RAM 16 GB.
+
+<br>
+
+![Physical DISK free and used](/images/free-and-used-space.png)
+
+Figure A.1.3: DISK 1 TB.
+
+<br>
+
+![Physical Ethernet2](/images/P_eth.png)
+
+Figure A.1.4: Port Ethernet interface with link local IP address.
+
+
+Oracle VirtualBox is a premier choice as a Type 2 hypervisor for Windows 11 due to its zero-cost licensing, broad accessibility across Windows editions, and cross-platform portability. While Windows 11 includes a native virtualization platform (Hyper-V), VirtualBox serves as a highly flexible, application-level alternative. It is ideal for developers, students, and IT professionals who require rapid deployment of diverse operating systems without modifying the host’s core architecture. It create and run other operating systems—like Linux, macOS, or older Windows versions—as virtual machines right on your desktop.
+
+- Type 2 hypervisor
+  * virtualbox (7.2.2r170484) (where 170484 is the specific build number)
+
+Alongside installing the hypervisor recommended to install the extension package this is usefull i.e NIC (network card interface) ability fot the guest machine.
 
 ### Tasks A2 ( Create the machine)
 
-The standard procedure for creating a new Virtual Machine (VM) within Oracle VM VirtualBox. This process allows an administrator to isolate and run a secondary guest operating system safely inside a host computer's existing environment.
+**Technical methodology for guest machine**
 
-**Technical Methodology**
+The standard procedure for creating a new Virtual Machine (VM) within Oracle VM VirtualBox. This process allows an administrator to isolate and run a guest operating system safely inside a host computer's existing environment.
 
-The setup process involves configuring virtual hardware resources to mimic a physical computer through a five-step wizard:
+The creation setup process for VMs involves configuring virtual hardware resources to mimic a physical computer through a five-step wizard:
 
-  - Instance Initialization: Initiating the wizard via the New button to define the machine's name, host destination folder, and the guest operating system's ISO image.
+![virtualbox](/images/vm_first.png)
 
-  ![machine namimg](/images/first.png)
+Screenshot A.2.1: VM1, Initiating the wizard via the New button.
 
-  - Hardware Allocation: Adjusting the allocation sliders to assign host RAM and CPU cores to the virtual environment based on guest OS system requirements.
+<br>
 
-  ![username and host](/images/second.png)
+This is where the machine name, operating system distribution (ubuntu) and the CPU architecture of 64-bit is setup.
 
-  - Virtual Disk Provisioning: Setting up a virtual hard disk using the Dynamically allocated format, ensuring host storage is only consumed as data is written within the VM.
+![machine naming](/images/vm_second.png)
 
-  ![vcpu and vRAM](/images/third.png)
+Screenshot A.2.2: VM1, Assigning machine name and location of ubuntu 24-04 ISO image.
 
-  - Configuration Validation: Reviewing the hardware summary matrix before clicking Finish to build the virtual machine.
+<br>
 
-  ![vDISK](/images/fourth.png)
+![username and host](/images/vm_third.png)
+
+Screenshot A.2.3: VM1, Setting up the username, hostname, domain name and password.
+
+<br>
+
+Hardware Allocation: Adjusting the allocation sliders to assign the host 2 GB RAM and 2 CPU cores to the virtual environment based on guest OS system requirements.
+
+Virtual Disk Provisioning: Setting up a virtual 20 GB hard disk using the Dynamically allocated format, ensuring host storage is only consumed as data is written within the VM.
+
+![vcpu and vRAM](/images/vm_fourth.png)
+
+Screenshot A.2.4: VM1, Setting up 2 GB RAM and 2 CPU core.
+
+<br>
+
+Configuration Validation: Reviewing the hardware summary matrix before clicking Finish to build the virtual machine.
+
+![vDISK](/images/vm_fivth.png)
+
+Screenshot A.2.5: VM1, Setting up 20 GB storage disk.
+
+<br>
+
+Setting up the virtual network is rather done through the setting button after completing the wizard.
+
+![NAT topology](/images/vm_NAT.png)
+
+Screenshot A.2.6: VM1, Configuring adaptor as NAT.
+
 
 **Operational Benefits**
 
@@ -91,6 +145,10 @@ The guest is interacting with a virtualized CPU topology. The hypervisor interce
 
 ![cpu](/images/hypervisor.png)
 
+Figure A.3.1: VM1, Kernel-based virtualization module technology.
+
+<br>
+
 > 2. command free -h
 
 - What the guest sees:
@@ -103,11 +161,15 @@ This memory is a slice of the host's physical RAM, mapped to the guest's virtual
 
 In reality, the host may use techniques like
 
-  - memory ballooning, 
+  - memory ballooning (a virtualization technique that allows a physical host to reclaim unused RAM from virtual machines (VMs) and reassign it where it is needed.), 
 
   - page sharing, or overcommitting, meaning the physical RAM backing the guest can dynamically shift or be shared with other VMs.
 
 ![RAM](/images/meme.png)
+
+Figure A.3.2: VM1, total primary memory size 2 GB. 
+
+<br>
 
 > 3. command lsblk
 
@@ -123,6 +185,10 @@ The sr0 drive is an ISO image file (such as a Linux installation disc or Virtual
 
 ![storage](/images/listblock.png)
 
+Figure A.3.3: VM1, secondary memory size sda 20 GB and no virtual memory.
+
+<br>
+
 > 4. command ip addr
 
 - What the guest sees:
@@ -134,6 +200,10 @@ The guest sees local network interfaces (such as eth0, ens3, or enp0s3) assigned
 The guest is using a Virtual Network Interface Card (vNIC) software-emulated by the hypervisor. This vNIC connects to a virtual bridge or switch inside the host's operating system, which multiplexes the traffic alongside other VMs over the host's actual physical network interface card (pNIC).
 
 ![nat network](/images/nat_ip.png)
+
+Figure A.3.4: VM1, NAT network topology with IP 10.0.2.15/24.
+
+<br>
 
 > 5. command systemd-detect-virt
 
@@ -148,6 +218,8 @@ Oracle VM VirtualBox: The hypervisor software running on the host machine is Vir
 Detection Mechanism: The systemd-detect-virt command looks inside files like /sys/class/dmi/id/product_name and detect execution in a virtualized environment.
 
 ![virtualized environment](/images/virt.png)
+
+Figure A.3.5: VM1, detected it's running over oracle virtualbox.
 
 <br>
 
