@@ -20,6 +20,7 @@
   - [Tasks B1 (Measure the vCPU count)](#tasks-b1-measure-the-vcpu-count)
   - [Tasks B2 (Produce contention)](#tasks-b2-produce-contention)
   - [Tasks B3 (Your consolidation ratio)](#tasks-b3-your-consolidation-ratio)
+    - [Network](#network)
 - [Reflection](#reflection)
 - [Appendix](#appendix)
 
@@ -463,7 +464,7 @@ Risks of Resource Overcommitment (What it Risks)
 
 - System Instability: Extreme memory overcommitment can force the host to swap to disk, drastically slowing down operations or triggering the Out-Of-Memory (OOM) killer, which terminates active processes.
 
-## Network
+### Network
 
 This shows main concept difference between Layer 2 communication within a private network and Layer 3 routing to external networks.
 
