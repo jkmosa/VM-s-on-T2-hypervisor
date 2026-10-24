@@ -10,7 +10,6 @@
 - Submission date 
   - 09/28/2026
 
-
 <!-- TOC -->
 
 - [Part A — the machine](#part-a--the-machine)
@@ -26,14 +25,13 @@
 
 <!-- /TOC -->
 
-
 ## Part A — the machine 
 
 ### Tasks A1 (Install a type 2 hypervisor)
 
 **Physical (host machine)**
 
-The system has strong physical resources, including a 24-core CPU with 32 logical processors, approximately 16 GB of RAM, and a 954 GB NVMe SSD. At the time of measurement, CPU utilization was low at 2%, while memory usage was relatively high at 15.2 GB. The Ethernet interface was not connected but showed no active network traffic with specifically link local ip address of 169.254.32.42.
+The system has strong physical resources, including a 24-core CPU with 32 logical processors, approximately 16 GB of RAM, and a 954 GB NVMe SSD. At the time of measurement, CPU utilization was low at 2%, while memory usage was relatively high at 15.2 GB. The Ethernet interface was not connected but showed no active network traffic with specifically APIPA ip address of 169.254.32.42.
 
 The chosen host machine under the type 2 hybervisor is Windows 11. 
 
@@ -60,7 +58,7 @@ Figure A.1.3: DISK 1 TB.
 
 ![Physical Ethernet2](/images/P_eth.png)
 
-Figure A.1.4: Port Ethernet interface with link local IP address.
+Figure A.1.4: Port Ethernet interface with APIPA and link local IP address.
 
 
 Oracle VirtualBox is a premier choice as a Type 2 hypervisor for Windows 11 due to its zero-cost licensing, broad accessibility across Windows editions, and cross-platform portability. While Windows 11 includes a native virtualization platform (Hyper-V), VirtualBox serves as a highly flexible, application-level alternative. It is ideal for developers, students, and IT professionals who require rapid deployment of diverse operating systems without modifying the host’s core architecture. It create and run other operating systems—like Linux, macOS, or older Windows versions—as virtual machines right on your desktop.
@@ -98,21 +96,21 @@ Screenshot A.2.3: VM1, Setting up the username, hostname, domain name and passwo
 
 <br>
 
-Hardware Allocation: Adjusting the allocation sliders to assign the host 2 GB RAM and 2 CPU cores to the virtual environment based on guest OS system requirements.
-
-Virtual Disk Provisioning: Setting up a virtual 20 GB hard disk using the Dynamically allocated format, ensuring host storage is only consumed as data is written within the VM.
+Hardware Allocation: Adjusting the allocation sliders to assign the host 8 GB RAM and 16 CPU cores to the virtual environment based on guest OS system requirements.
 
 ![vcpu and vRAM](/images/vm_fourth.png)
 
-Screenshot A.2.4: VM1, Setting up 2 GB RAM and 2 CPU core.
+Screenshot A.2.4: VM1, Setting up 8 GB RAM and 16 CPU core.
 
 <br>
+
+Virtual Disk Provisioning: Setting up a virtual 50 GB hard disk using the Dynamically allocated format, ensuring host storage is only consumed as data is written within the VM.
 
 Configuration Validation: Reviewing the hardware summary matrix before clicking Finish to build the virtual machine.
 
 ![vDISK](/images/vm_fivth.png)
 
-Screenshot A.2.5: VM1, Setting up 20 GB storage disk.
+Screenshot A.2.5: VM1, Setting up 50 GB storage disk.
 
 <br>
 
@@ -143,9 +141,13 @@ The guest sees a hypervisor vendor: KVM. It recognizes that its CPU execution is
 
 The guest is interacting with a virtualized CPU topology. The hypervisor intercepts specific CPU instructions (using hardware extensions Intel VT-x) and presents a simulated or pass-through subset of the physical host’s CPU capabilities to the guest.
 
+![cpu](/images/lscpu.png)
+
+Screenshot A.3.1.1: VM1, 16 cores of vCPU.
+
 ![cpu](/images/hypervisor.png)
 
-Figure A.3.1: VM1, Kernel-based virtualization module technology.
+Screenshot A.3.1.2: VM1, Kernel-based virtualization module technology.
 
 <br>
 
@@ -167,7 +169,7 @@ In reality, the host may use techniques like
 
 ![RAM](/images/meme.png)
 
-Figure A.3.2: VM1, total primary memory size 2 GB. 
+Screenshot A.3.2: VM1, total primary memory size 2 GB. 
 
 <br>
 
@@ -185,7 +187,7 @@ The sr0 drive is an ISO image file (such as a Linux installation disc or Virtual
 
 ![storage](/images/listblock.png)
 
-Figure A.3.3: VM1, secondary memory size sda 20 GB and no virtual memory.
+Screenshot A.3.3: VM1, secondary memory size sda 20 GB and no virtual memory.
 
 <br>
 
@@ -201,7 +203,7 @@ The guest is using a Virtual Network Interface Card (vNIC) software-emulated by 
 
 ![nat network](/images/nat_ip.png)
 
-Figure A.3.4: VM1, NAT network topology with IP 10.0.2.15/24.
+Screenshot A.3.4: VM1, NAT network topology with IP 10.0.2.15/24.
 
 <br>
 
@@ -219,12 +221,11 @@ Detection Mechanism: The systemd-detect-virt command looks inside files like /sy
 
 ![virtualized environment](/images/virt.png)
 
-Figure A.3.5: VM1, detected it's running over oracle virtualbox.
+Screenshot A.3.5: VM1, detected it's running over oracle virtualbox.
 
 <br>
 
 ## Part B — allocation 
-
 
 ### Tasks B1 (Measure the vCPU count)
 
@@ -238,19 +239,116 @@ The objective of this task was to evaluate how virtual machine processing perfor
 
 3. Consistency Constraints: Each configuration was tested 3 separate times for a duration of 30 seconds to minimize background noise and ensure statistical reliability.
 
+```bash
+stress-ng --cpu N --cpu-method matrixprod --timeout 30s --metrics-brief
+```
+
+**Note**: Where N represents the respective vCPU allocation: 1, 2, or 4.
+
+|      Options      |                            Expanationn                                |
+|       :---:       |                               :---:                                   |
+| --cpu 4 	        | Starts four CPU stress workers.                                       |
+| --cpu-method      | matrixprod	Uses matrix multiplication as the CPU-intensive workload. |
+| --timeout 30s	    | Runs the stress workload for approximately 30 seconds.                |
+| --metrics-brief   | Displays summarized performance statistics.                           |
+
+![stress bogo-ops/s](images/stress1.png)
+
+Screenshot B.1.1: completed operation on VM1, with 1 vCPU stressed for 30 seconds.
+
+![task manager cpu usage spike](/images/utilization9.png)
+
+Screenshot B.1.2 The spike of the cpu usage in the host machine, when VM1 with stressed with vCPU of 1
+
+<br>
+
+![stress bogo-ops/s](images/stress2.png)
+
+Screenshot B.1.3: completed operation on VM1, with 2 vCPU stressed for 30 seconds.
+
+![task manager cpu usage spike](/images/utilization11.png)
+
+Screenshot B.1.4 The spike of the cpu usage in the host machine, when VM1 with stressed with vCPU of 2
+
+<br>
+
+![stress bogo-ops/s](images/stress4.png)
+
+Screenshot B.1.5: completed operation on VM1, with 4 vCPU stressed for 30 seconds.
+
+![task manager cpu usage spike](/images/utilization21.png)
+
+Screenshot B.1.6 The spike of the cpu usage in the host machine, when VM1 with stressed with vCPU of 4
+
+<br>
+
+**Bogo ops**
+
+- It is the number of workload-specific operations completed, not the amount of CPU stress itself.
+
+In this experiment, the operations are associated with the matrixprod stress method, which repeatedly performs matrix multiplication. For example, the first 1-vCPU test completed 71,608 bogo operations, while the first 4-vCPU test completed 248,875.
+
+This demonstrates that the four-worker configuration completed substantially more work within approximately the same period. However, bogo operations are not equivalent to CPU instructions or floating-point operations and should not be interpreted as an absolute measure of processor performance.
+
+**Real time**
+
+- It is the actual elapsed wall-clock time from the start to the end of the measured workload, including waiting and scheduling delays.
+
+For example, the first 1-vCPU test reported 32.46 seconds, even though the requested timeout was 30 seconds. This difference can result from workload termination delays (Scheduling delays in the virtual machine), scheduling, or other execution overhead (CPU contention). The reported real time is the value used to calculate real-time throughput.
+
+**User time (usr time)**
+
+- It is the total CPU execution time spent in user mode by all stress workers, excluding kernel-mode CPU time.
+
+For example, the first 4-vCPU test reported 116.11 seconds of user time during approximately 30 seconds of real time. This is possible because four CPU workers execute concurrently. If four workers each consume approximately 30 seconds of CPU time, their combined CPU time can approach 120 seconds.
+
+Therefore, user time is cumulative across the workers rather than simply the elapsed duration.
+
+**System time (sys time)**
+
+- System time represents the cumulative CPU time spent executing kernel-mode operations on behalf of the workload.
+
+These operations can include system calls, memory-management activities, and other kernel processing.
+
+In the first 1-vCPU test, system time was 17.70 seconds, compared with 12.12 seconds of user time. In the first 4-vCPU test, system time was only 4.50 seconds, while user time was 116.11 seconds.
+
+This indicates a significant difference in where CPU execution time was spent. The measurements alone do not establish the exact reason, but differences in the workload's execution path, scheduling, or runtime environment could contribute.
+
+**Bogo ops/s (real time)**
+
+- This metric measures the number of bogo operations completed per second of elapsed wall-clock time.
+
+Bogo ops/s = Total bogo ops / Real time
+
+This metric is particularly useful for comparing total throughput between different vCPU configurations.
+
+**Bogo ops/s (usr+sys time)**
+
+- This metric measures the number of bogo operations completed per second of accumulated CPU execution time.
+
+Bogo ops/s = Total bogo ops / (User time + System time)
+
+Unlike real-time throughput, this metric accounts for the combined CPU time consumed by all workers. It is useful for examining how efficiently CPU execution time is converted into completed workload operations.
+
 **Collected Data and Metrics**
 
 The table below outlines the computational throughput measured in bogo-ops/s (bogus operations per second) across all nine iterations.
 
 | vCPU Configuration | Run 1 (bogo-ops/s) | Run 2 (bogo-ops/s) | Run 3 (bogo-ops/s) | Average Throughput (bogo-ops/s) |
 |:---                |        :---:       |        :---:       |        :---:       |                             ---:|
-| 1 vCPU	           | 2,171.02	          | 2,213.90	         | 2,134.29	          | 2,173.07                        |
-| 2 vCPUs	           | 2,255.63	          | 2,282.07	         | 2,352.98	          | 2,296.89                        |
-| 4 vCPUs	           | 2,307.03	          | 2,056.16	         | 2,228.32	          | 2,197.17                        |
+| 1 vCPU	           | 2,206.10	          | 2,388.08           | 2,380.99	          | 2,325.05                        |
+| 2 vCPUs	           | 4,959.21	          | 4,826.05	         | 4,629.61	          | 4,804.95                        |
+| 4 vCPUs	           | 8,247.44	          | 8,310.27	         | 8,396.61	          | 8,318.10                        |
 
-The spike of the cpu usage in the host machine:
+Table B.1 this the average throughput of all the vCPU configurations. 
 
-![task manager cpu usage spike](/images/4cpu.png)
+Analysis: The results show that increasing the number of vCPUs improves the total computational throughput. The 2-vCPU configuration achieved approximately 2.07 times the throughput of the 1-vCPU configuration, indicating nearly linear scaling. However, the 4-vCPU configuration achieved only 3.58 times the throughput of the 1-vCPU configuration.
+
+The reduction in scaling efficiency at four vCPUs may be caused by contention for shared CPU resources, hypervisor scheduling overhead, or changes in processor frequency under higher load. The benchmark results alone do not establish the exact cause.
+
+The experiment demonstrates that increasing the number of vCPUs generally improves performance for parallel CPU-intensive workloads. However, the improvement is not necessarily proportional to the number of vCPUs. The 4-vCPU configuration achieved the highest total throughput, while the 2-vCPU configuration showed the highest average throughput per vCPU. The measurements illustrate both the benefits and limitations of parallel processing in virtualized environments.
+
+<br>
 
 ### Tasks B2 (Produce contention)
 
@@ -258,11 +356,31 @@ The spike of the cpu usage in the host machine:
 
 The objective of this task was to analyze the performance impact of CPU resource contention by simulating two virtual machines competing for the same underlying physical hardware.
 
-1. System Provisioning: Two identical virtual machines (Guest 1 and Guest 2) were configured, each allocated 2 vCPUs and 4 GB RAM.
+1. System Provisioning: Two identical virtual machines (Guest 1 and Guest 2) were configured, each allocated 16 vCPUs and 8 GB RAM.
 
 2. Baseline Test (Isolated): Guest 1 was booted alone while Guest 2 was entirely powered off. The benchmark tool stress-ng was executed to measure peak isolated performance.
 
 3. Contention Test (Concurrent): Both Guest 1 and Guest 2 were powered on simultaneously. The benchmark command was initiated on both machines at the exact same time to force resource competition.
+
+```bash
+stress-ng --cpu 16 --cpu-method matrixprod --timeout 30s --metrics-brief
+```
+
+![stress bogo-ops/s](images/guest1.png) 
+
+Screenshot B.2.1 VM1, running the stree worker
+
+![task manager cpu usage spike](/images/utilization52.png)
+
+Screenshot B.2.3 VM1, running the stress worker with 16 cores creating a spike on host machine.
+
+![stress bogo-ops/s](images/contention.png)
+
+Screenshot B.2.2 both VM1 and VM2, running the stress worker.
+ 
+![task manager cpu usage spike](/images/utililization60.png)
+
+Screenshot B.2.3 both VMs, running the stress worker with 16 cores each creating a spike on host machine.
 
 **Collected Data & Benchmark Metrics**
 
@@ -270,36 +388,62 @@ The throughput metrics below reflect the computational output measured in bogo-o
 
 | Test Scenario           |	Guest 1 Throughput (bogo-ops/s)	| Guest 2 Throughput (bogo-ops/s) |	Total Aggregate Throughput |
 |:---                     |                :---:            |              :---:              |                        ---:|
-| Test 1: Guest 1 Alone	  |          2,318.80	              |          Powered Off	          |           2,318.80         |
-| Test 2: Concurrent Load |	         2,150.54	              |          1,928.52	              |           4,079.06         |
+| Test 1: Guest 1 Alone	  |          5,986.73               |          Powered Off	          |           5,986.73         |
+| Test 2: Concurrent Load |	         1,778.65	              |          20,855.81	            |           22,634.46        |
 
-The spike of the cpu usage in the host machine:
- 
-![task manager cpu usage spike](/images/2cpu_2nodes.png)
+Table B.2 throughput when both virtual machines run simultaneously
 
 **Observations**
 
-- Individual Performance Drop: When running concurrently, Guest 1’s performance dropped from 2,318.80 to 2,150.54 bogo-ops/s. This represents a 7.25% loss in processing efficiency for the individual VM due to resource contention.
+The experiment evaluated CPU contention by running the stress-ng matrix multiplication workload on two Ubuntu virtual machines.
 
-- Aggregate Gain: While individual performance degraded, the total workload processed by the host CPU hardware jumped from 2,318.80 to 4,079.06 bogo-ops/s (43.15% higher system utilization).
+When Guest 1 was running alone, it achieved a throughput of 5,986.73 bogo-ops/s. During simultaneous execution with Guest 2, its throughput decreased to 1,778.65 bogo-ops/s, representing severe performance reduction of approximately 70.29%.
 
+(5986.73-1778.65)/(5986.73) * 100% = 70.29%
+
+Guest 2 achieved 20,855.81 bogo-ops/s during concurrent execution, resulting in a combined aggregate throughput of 22,634.46 bogo-ops/s. This represents a 278.07% increase compared with Guest 1's standalone throughput.
+
+(22634.46-5986.73)/(5986.73) * 100% = 278.07%
+
+The elapsed time between the script timestamps is approximately (1 min, 12.16 secs) 72 seconds, despite the stressor reporting only 32.99 seconds of real time. This means the overall command took much longer than the stressor's measured workload interval.
+
+The concurrent test was recorded with matching start timestamps of 15:12:22, providing evidence that the benchmark command intervals overlapped.
+
+The substantial decrease in Guest 1's throughput is consistent with resource contention. However, had a experienced kernel `soft-lockup` warnings and abnormal execution times suggest that virtualization instability may also have affected the results. Therefore, the observed performance reduction cannot be attributed exclusively to CPU contention.
+
+![stall cpu](/images/softlock.png)
+
+Screenshot B.2.4 abnormal execution times suggest that virtualization instability
+
+<br>
 
 ### Tasks B3 (Your consolidation ratio)
 
+Four virtual machines were configured with 8 vCPUs, 4 GB RAM, and 25 GB virtual disk capacity each. The physical host has 24 CPU cores (32 logical processors), 16 GB RAM, and a 1 TB NVMe SSD with 35 GB of available storage.
+
+| Resource Type  |  per VM  | Total Promised (All VMs) | Host Hardware (Physical)   | Consolidation Ratio	          | Overcommitted  |
+|:---            |  :---:   |          :---:           |           :---:            |             :---:             |            ---:|
+| CPU (Cores)	   | 8 vCPUs  | 32 vCPUs	  	           | 24 Cores / 32 Threads      | 1.33 : 1 (vCPU to Core)	      |    yes         |
+| Memory (RAM)	 |   4 GB   | 16 GB RAM	               | 16 GB RAM                  | 1 : 1 (Promised to Physical)  |    No          |
+| Storage (Disk) |  25 GB   | 100 GB Virtual Disk      | 1 TB NVMe SSD (35 GB free) | 2.86 : 1 (Allocated to free)  |    yes         |
+
+Table B.3 consolidation ratio between the Promised Allocation Metrics vs Host
+
 ![ubuntu 24.04.5 LTS](images/two_machine.png)
 
-**Consolidation Ratios & Resource Allocation**
+Screenshot B.3.1
 
-This analysis evaluates the consolidation metrics for a multi-VM deployment on the host hardware. The deployment scenario assumes two active virtual machines, each provisioned with 2 vCPUs, 4 GB RAM, and a 50 GB virtual hard drive.
+The CPU consolidation ratio is 32:24, or 1.33:1, indicating CPU overcommitment relative to physical cores. The memory consolidation ratio is 16:16, or 1:1, while the disk commitment ratio is 100:35, or 2.86:1, relative to available free storage.
 
-**Host vs. Promised Allocation Metrics**
+Consolidation allows multiple virtual machines to share physical resources, improving hardware utilization and reducing infrastructure costs. However, it also introduces risks such as CPU contention, memory pressure, and storage exhaustion.
 
-| Resource Type  | Host Hardware (Physical) | Total Promised (All VMs) | Consolidation Ratio	         | Overcommitted  |
-|:---            |          :---:           |           :---:          |             :---:             |            ---:|
-| CPU (Cores)	   | 24 Cores / 32 Threads	  | 4 vCPUs	                 | 6 : 1 (vCPU to Core)	         |    No          |
-| Memory (RAM)	 | 16 GB RAM	              | 4 GB RAM                 | 4 : 1 (Promised to Physical)  |    No          |
-| Storage (Disk) | 1 TB NVMe SSD	          | 40 GB Virtual Disk       | 25 : 1 (Allocated to Total)   |    No          |
+Memory is the most likely initial runtime bottleneck because the virtual machines collectively request all 16 GB of installed physical RAM, leaving no dedicated capacity for Windows 11 or virtualization overhead. This could result in excessive paging, degraded performance, or an inability to start all four VMs.
 
+Storage presents another significant risk because the total promised virtual disk capacity exceeds the available free space. Dynamically allocated virtual disks may initially consume less space, but continued growth could eventually exhaust the host's storage.
+
+CPU overcommitment is primarily a performance risk rather than an immediate hard capacity limit because virtual CPUs can share physical execution resources through hypervisor scheduling.
+
+Therefore, memory is predicted to become the first practical runtime constraint, while disk storage represents the most significant provisioned-capacity risk.
 
 <br>
 
@@ -319,6 +463,50 @@ Risks of Resource Overcommitment (What it Risks)
 
 - System Instability: Extreme memory overcommitment can force the host to swap to disk, drastically slowing down operations or triggering the Out-Of-Memory (OOM) killer, which terminates active processes.
 
+## Network
+
+This shows main concept difference between Layer 2 communication within a private network and Layer 3 routing to external networks.
+
+![network topology](/images/NT.png)
+
+| Adapter	   |           Guest A          |           Guest B         |
+|  :---:     |           :---:            |            :---:          | 
+| Adapter 1  |          NAT	              |           NAT             |
+| Adapter 2  |	Internal Network (intnet) |	Internal Network (intnet) |
+| Private IP |  192.168.50.10/24          | 192.168.50.20/24          |
+
+Table B.4 network configuration topology for each guests.
+
+![ping neigbour](images/ping-broadcast.png)
+
+Screenshot B.3.2 successful ping to the neighbour (192.169.50.20).
+
+From Guest A, test Guest B:
+
+```bash
+ping -I enp0s8 -c 3 192.168.50.20
+```
+
+Expected: Successful replies because both guests belong to the same private subnet and virtual switch. ARP resolves Guest B's MAC address, and frames are delivered directly without a router.
+
+Next, test internet connectivity through the private adapter:
+
+```bash
+ping -I enp0s8 -c 3 1.1.1.1
+```
+
+Expected: Failure because the private internal network has no router or internet gateway. Depending on routing configuration, the result may be Network is unreachable or another connectivity failure.
+
+Finally, test the internet normally:
+
+```bash
+ping -c 3 1.1.1.1
+```
+
+Expected: Successful replies through Adapter 1 (NAT), assuming the NAT connection is working.
+
+The default route should normally point through the NAT adapter, while the private subnet has a directly connected route through the internal adapter.
+
 <br>
 
 ## Appendix
@@ -333,26 +521,8 @@ sudo cat /sys/class/dmi/id/product_name
 
 ```
 
-Part B task 1:
-
-```bash
-stress-ng --cpu N --cpu-method matrixprod --timeout 30s --metrics-brief
-```
-Use code with caution.
-(Where N represents the respective vCPU allocation: 1, 2, or 4)
-
-![stress bogo-ops/s](images/stress_cpu1.png)
-
-![stress bogo-ops/s](images/stress_cpu2.png)
-
-![stress bogo-ops/s](images/stress_cpu4.png)
-
 Part B task 2:
 
-```bash
-stress-ng --cpu 2 --cpu-method matrixprod --timeout 30s --metrics-brief
-```
-![stress bogo-ops/s](images/1node.png)
+This commands were used to used to show the contention between the to VMs.
 
-![stress bogo-ops/s](images/2node.png)
-
+![bash](/images/bash.png)
